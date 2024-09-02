@@ -7,6 +7,11 @@ SCRIPT_DIR=$(cd -P -- "$(dirname -- "$0")" && pwd -P)
 LOGDIR="$SCRIPT_DIR/logs"
 LOGFILE="$LOGDIR/install_docker.log"
 
+if [[ $EUID -ne 0 ]]; then
+   echo "这个脚本必须以 root 权限运行"
+   exit 1
+fi
+
 # 检查并创建日志目录
 mkdir -p "$LOGDIR"
 
@@ -33,11 +38,10 @@ install_docker() {
     log "Installing Docker for $os_version ($arch) from offline package..."
     
     case $os_version in
-        ubuntu*|debian)
-            sudo apt update
+        ubuntu*|debian*)
             sudo apt install -y "$SCRIPT_DIR/../install_packages/docker/${os_version%%.*}"/*"$arch"*.deb
             ;;
-        centos)
+        centos*)
             sudo yum localinstall -y "$SCRIPT_DIR/../install_packages/docker/$os_version/$arch"/*.rpm
             ;;
         *)
@@ -67,17 +71,6 @@ ensure_docker_service_running() {
     else
         log "Failed to start Docker service. Checking the status..."
         sudo systemctl status docker | tee -a "$LOGFILE"
-        exit 1
-    fi
-}
-
-# 函数：加载 Docker 镜像
-load_docker_images() {
-    sudo "$SCRIPT_DIR/load_docker_images.sh"
-    if [ $? -eq 0 ]; then
-        log "Docker images loaded successfully."
-    else
-        log "Failed to load Docker images."
         exit 1
     fi
 }
