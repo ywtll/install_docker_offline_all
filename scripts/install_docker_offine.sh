@@ -26,8 +26,9 @@ check_docker_installed() {
         log "Docker is not installed. Starting installation..."
         install_docker "$1" "$2"
     else
-        log "Docker is already installed. Ensuring the Docker service is running..."
-        ensure_docker_service_running
+        log "Docker is already installed."
+        echo -e "\e[31mdocker already exists \e[0m"
+        exit 1
     fi
 }
 
@@ -39,10 +40,10 @@ install_docker() {
     
     case $os_version in
         ubuntu*|debian*)
-            sudo apt install -y "$SCRIPT_DIR/../install_packages/docker/${os_version%%.*}"/*"$arch"*.deb
+            sudo apt install -y $SCRIPT_DIR/../install_packages/docker/$os_version/$arch/*.deb
             ;;
         centos*)
-            sudo yum localinstall -y "$SCRIPT_DIR/../install_packages/docker/$os_version/$arch"/*.rpm
+            sudo yum localinstall -y $SCRIPT_DIR/../install_packages/docker/$os_version/$arch/*.rpm
             ;;
         *)
             log "Unsupported OS version: $os_version"
@@ -55,6 +56,7 @@ install_docker() {
         ensure_docker_service_running
     else
         log "Failed to install Docker for $os_version ($arch)."
+        echo -e "\e[31mFailed to install Docker for $os_version ($arch). \e[0m"
         exit 1
     fi
 }
@@ -84,6 +86,7 @@ detect_os_version_and_arch() {
         echo "$os_version $arch"
     else
         log "Unable to detect OS version."
+        echo -e "\e[31Unable to detect OS version. \e[0m"
         exit 1
     fi
 }
@@ -115,8 +118,8 @@ if [ "$1" == "install" ]; then
     fi
     log "Starting script..."
     check_docker_installed "$os_version" "$arch"
-    load_docker_images
     log "Script completed successfully."
+    echo -e "\e[32mScript completed successfully. \e[0m"
 elif [ "$1" == "list" ]; then
     list_supported_os
 else
